@@ -51,4 +51,17 @@ export type PaymentFee = {
   proyectID: string; 
 }
 
-
+export type Statement = {
+  id: string;
+  investor: string;
+  period: string; // number fraccion 1/60
+  dueDate: string; // Date
+  paymentDate: string; // Date
+  dayInDebt: string; // Date
+  interest: string; // float
+  capitalPayment: string;
+  paymentFee: string; // interest + capitalPayment (interes + abono a capital)
+  balance: string;
+  interesRate: string;
+  proyectId: string;
+}
