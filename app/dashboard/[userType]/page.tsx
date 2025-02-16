@@ -2,10 +2,12 @@ import CreateProyectSheet from "@/components/sheets/createProyectSheet/createPro
 import { paymentFeeColumns } from "./components/table/columns";
 import DataTable from "@/components/dataTable/dataTable";
 
-export default async function Dashboard({
-	params,
-}: { params: Promise<{ userType: string }> }) {
-	const { userType } = await params;
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ userType: string }>
+}) {
+	const userType = (await params).userType;
 
 	return (
 		<div>
