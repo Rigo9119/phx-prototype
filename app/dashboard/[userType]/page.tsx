@@ -2,15 +2,9 @@ import CreateProyectSheet from "@/components/sheets/createProyectSheet/createPro
 import { paymentFeeColumns } from "./components/table/columns";
 import DataTable from "@/components/dataTable/dataTable";
 
-interface DashboardProps {
-  params: {
-    userType: Promise<string>;
-  };
-}
 
-export default async function Dashboard({ params }: DashboardProps) {
+export default async function Dashboard({ params }: { params: { userType: string}}) {
   const { userType } = await params;
-  console.log('user type: ', userType)
 
   return (
     <div>
