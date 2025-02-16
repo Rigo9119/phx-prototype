@@ -24,7 +24,7 @@ export const paymentFeeColumns: ColumnDef<PaymentFee>[]= [
     header: "Banco",
   },  
   {
-    accessorKey: "bankAcountType",
+    accessorKey: "bankAccountType",
     header: "Tipo de cuenta",
   },
   {
@@ -32,7 +32,7 @@ export const paymentFeeColumns: ColumnDef<PaymentFee>[]= [
     header: "Numero de cuenta",
   },
   {
-    accessorKey: "proyectId",
+    accessorKey: "proyectID",
     header: "ID de proyecto",
   },
 ]

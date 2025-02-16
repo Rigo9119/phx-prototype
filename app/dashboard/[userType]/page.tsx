@@ -6,6 +6,8 @@ import PieChartCmp from "./components/charts/pieChart";
 import { BarChartCmp } from "./components/charts/barCharts";
 import { LineChartCmp } from "./components/charts/lineChart";
 import { BarChartStackCmp } from "./components/charts/barChartStack";
+import { mockCuotas } from "@/data/mockdata/cuotas";
+import type { PaymentFee } from "@/lib/types";
 
 export default async function Page({
 	params,
@@ -13,7 +15,7 @@ export default async function Page({
 	params: Promise<{ userType: string }>;
 }) {
 	const userType = (await params).userType;
-
+  const { result } = mockCuotas;
 	return (
 		<div>
 			<div className="flex flex-item items-center justify-between w-full">
@@ -58,7 +60,7 @@ export default async function Page({
 			</div>
 			<section className="mt-8">
 				<h2 className="text-2xl font-bold pb-4">Cuotas</h2>
-				<DataTable columns={paymentFeeColumns} data={[]} />
+				<DataTable columns={paymentFeeColumns} data={result as PaymentFee[]} />
 			</section>
 			<section className="mt-8">
 				<h2 className="text-2xl font-bold pb-4">Estados de cuenta</h2>

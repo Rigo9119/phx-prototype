@@ -57,7 +57,7 @@ export type Statement = {
   period: string; // number fraccion 1/60
   dueDate: string; // Date
   paymentDate: string; // Date
-  dayInDebt: string; // Date
+  daysInDebt: string; // Date
   interest: string; // float
   capitalPayment: string;
   paymentFee: string; // interest + capitalPayment (interes + abono a capital)
