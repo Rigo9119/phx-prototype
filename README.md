@@ -400,14 +400,14 @@ Como el cambio no afecta arquitectura ni stack tecnológico, el flujo de §5.1 n
 
 | Job | Dispara en | Pasos | Gate |
 |---|---|---|---|
-| `ci` | Push y PR contra `main` | Checkout → setup pnpm/Node 20 → `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm build` | Debe estar en verde para poder mergear el PR (protección de rama, §5.4) |
-| `deploy` | Push a `main` (después de merge), solo si `ci` pasó | Vercel CLI: `vercel pull` → `vercel build --prod` → `vercel deploy --prebuilt --prod` | Depende de `needs: ci`; nunca despliega un build que no pasó lint/build |
+| `ci` | Push y PR contra `main` | Checkout → setup pnpm/Node 20 → `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm build` (export estático, `GITHUB_PAGES=true`) → sube el artefacto `out/` (solo en push a `main`) | Debe estar en verde para poder mergear el PR (protección de rama, §5.4) |
+| `deploy` | Push a `main` (después de merge), solo si `ci` pasó | `actions/deploy-pages` publica el artefacto en GitHub Pages | Depende de `needs: ci`; nunca despliega un build que no pasó lint/build |
 
-Herramienta de despliegue: **Vercel**, vía los secrets del repositorio `VERCEL_TOKEN`, `VERCEL_ORG_ID` y `VERCEL_PROJECT_ID`. Esto cierra la brecha de `CI-INF-ci` identificada en §3.5 y materializa la herramienta que §7.2 ya proponía.
+Herramienta de despliegue: **GitHub Pages**. Se eligió sobre alternativas como Vercel/Netlify porque el prototipo (§1) no tiene API routes ni server actions: es enteramente cliente con datos mock, por lo que admite `output: "export"` (`next.config.ts`) sin pérdida de funcionalidad, y Pages se autentica con el `GITHUB_TOKEN` que Actions provee, sin secrets ni cuentas externas. Las rutas dinámicas (`app/dashboard/[userType]`, `app/register/[userType]`) declaran `generateStaticParams` para los dos valores reales de `userType` (`client`, `investor`, ver `lib/constatns.ts`). Esto cierra la brecha de `CI-INF-ci` identificada en §3.5 y actualiza la herramienta de despliegue que §7.2 proponía.
 
 ### 9.4 Evidencia
 
-> _Espacio para adjuntar, tras la ejecución real en GitHub: (1) captura del PR de CR-001 con el check `ci` en verde, (2) captura del run de Actions mostrando los jobs `ci` y `deploy` completados, (3) captura del deployment en Vercel con la URL de producción, (4) `git log --oneline --graph` mostrando la rama mergeada y el tag `BL-1.0`._
+> _Espacio para adjuntar, tras la ejecución real en GitHub: (1) captura del PR de CR-001 con el check `ci` en verde, (2) captura del run de Actions mostrando los jobs `ci` y `deploy` completados, (3) captura del sitio publicado en GitHub Pages, (4) `git log --oneline --graph` mostrando la rama mergeada y el tag `BL-1.0`._
 
 Este incremento no cierra una baseline nueva: `CI-INF-ci` pasa a estado "Implementado" dentro de `BL-1.0`, sin alterar el contenido de código, datos o configuración de la aplicación que esa baseline ya congeló. Una baseline `BL-2.0` (§4.1) sigue pendiente de los demás incrementos propuestos (`BL-1.1` a `BL-1.3`).
 

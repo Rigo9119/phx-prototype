@@ -1,5 +1,9 @@
 import { RegisterForm } from "@/components/forms/registerForm/registerForm";
 
+export function generateStaticParams() {
+	return [{ userType: "client" }, { userType: "investor" }];
+}
+
 export default async function Register({
   params,
 }: {
