@@ -23,7 +23,8 @@
 7. [Modelo de gestión de configuración propuesto](#7-modelo-de-gestión-de-configuración-propuesto)
 8. [Puesta en marcha del prototipo](#8-puesta-en-marcha-del-prototipo)
 9. [Implementación del pipeline CI/CD (CR-001)](#9-implementación-del-pipeline-cicd-cr-001)
-10. [Referencias](#10-referencias)
+10. [Síntesis del modelo de gestión de configuración](#10-síntesis-del-modelo-de-gestión-de-configuración)
+11. [Referencias](#11-referencias)
 
 ---
 
@@ -407,13 +408,55 @@ Herramienta de despliegue: **GitHub Pages**. Se eligió sobre alternativas como 
 
 ### 9.4 Evidencia
 
-> _Espacio para adjuntar, tras la ejecución real en GitHub: (1) captura del PR de CR-001 con el check `ci` en verde, (2) captura del run de Actions mostrando los jobs `ci` y `deploy` completados, (3) captura del sitio publicado en GitHub Pages, (4) `git log --oneline --graph` mostrando la rama mergeada y el tag `BL-1.0`._
+Sitio publicado y en vivo: **https://rigo9119.github.io/phx-prototype/**
+
+**Historial de despliegues** — ambiente `github-pages` con el último deploy exitoso:
+
+![Ambiente github-pages con el último despliegue](docs/evidence/cr-001-pages-environment.png)
+
+**Trazabilidad del deploy hasta el CR** — el despliegue activo enlaza al run `CI/CD #4` sobre `main`:
+
+![Historial de deployments mostrando el commit de CR-001](docs/evidence/cr-001-deployment-history.png)
+
+**Commit de merge verificado** — `6bbe305`, firmado (`Verified`), con el mensaje de Conventional Commits y `Refs: CR-001`:
+
+![Commit 6bbe305 verificado en GitHub](docs/evidence/cr-001-merge-commit.png)
+
+**Historial de Git** (rama mergeada + baseline etiquetada):
+
+```
+$ git log --oneline --graph --decorate -6
+* 6bbe305 (HEAD -> main, origin/main, origin/HEAD) feat(ci): implementar pipeline CI/CD (CR-001)
+* 3e7cca9 modifica el readme con el entregable de la unidad 2
+* 384d8dd (tag: BL-1.0) adds mockdate to the statements tables and cuotas table
+* e0dcf61 adds the rest of the charts for the investor proyect
+* bb94b97 adds accordion to the dahsboard statments
+* d777f7b fixes params props problem
+```
 
 Este incremento no cierra una baseline nueva: `CI-INF-ci` pasa a estado "Implementado" dentro de `BL-1.0`, sin alterar el contenido de código, datos o configuración de la aplicación que esa baseline ya congeló. Una baseline `BL-2.0` (§4.1) sigue pendiente de los demás incrementos propuestos (`BL-1.1` a `BL-1.3`).
 
 ---
 
-## 10. Referencias
+## 10. Síntesis del modelo de gestión de configuración
+
+Esta sección resume, en un solo lugar, cómo el estado actual del repositorio satisface cada criterio evaluado en la actividad. No introduce información nueva: enlaza a la sección donde cada elemento ya está definido y, cuando aplica, a la evidencia concreta de su ejecución.
+
+| Criterio evaluado | Cómo se cumple en este repositorio | Evidencia |
+|---|---|---|
+| **Implementación en Git** | Historial real con commits en Conventional Commits, rama de feature (`feat/CR-001-cicd-pipeline`), PR revisado antes de merge, baseline etiquetada con `git tag -a` | §9.2, §9.4 |
+| **Estrategia de branching y versionamiento** | Trunk-based con ramas de vida corta `<tipo>/CR-<id>-<slug>`, `main` protegida (PR + check `ci` en verde obligatorio), SemVer por baseline (§4) | §4, §5.4 |
+| **Automatización CI/CD** | `.github/workflows/ci-cd.yml`: job `ci` (lint + build) en cada push/PR, job `deploy` a GitHub Pages gateado por `needs: ci`, ejecutado de punta a punta sobre este mismo repositorio | §9.3, §9.4 (deploy en vivo: https://rigo9119.github.io/phx-prototype/) |
+| **Trazabilidad y control de cambios** | Flujo CR → rama → PR → checks → merge → CI-INF-ci aplicado en CR-001; cada commit referencia `Refs: CR-001`; matriz de trazabilidad requerimiento→CI→baseline en §6 | §5.1, §6, §9.1 |
+| **Documentación y evidencias** | Este documento (`CI-DOC-readme`) mantenido bajo control de versiones junto al código; capturas reales del deploy, del historial de despliegues y del commit verificado | §9.4 |
+
+### 10.1 El modelo en una frase
+
+Todo cambio a un CI bajo control (§3) pasa por una Change Request (§5.2) que se implementa en una rama corta, se valida con el pipeline automático (§9.3) antes de poder mergearse a `main`, y queda trazado hacia atrás — commit → CR → requerimiento (§6) — y hacia adelante, hasta el despliegue verificable en producción. CR-001 (§9) es la primera ejecución completa de ese ciclo sobre el propio repositorio, no solo su descripción.
+
+---
+
+## 11. Referencias
 
 - IEEE. (2012). *IEEE Std 828-2012 — IEEE Standard for Configuration Management in Systems and Software Engineering*. IEEE.
 - ISO/IEC/IEEE. (2017). *ISO/IEC/IEEE 12207:2017 — Systems and software engineering — Software life cycle processes*. ISO.
