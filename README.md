@@ -22,7 +22,8 @@
 6. [Definición de trazabilidad](#6-definición-de-trazabilidad)
 7. [Modelo de gestión de configuración propuesto](#7-modelo-de-gestión-de-configuración-propuesto)
 8. [Puesta en marcha del prototipo](#8-puesta-en-marcha-del-prototipo)
-9. [Referencias](#9-referencias)
+9. [Implementación del pipeline CI/CD (CR-001)](#9-implementación-del-pipeline-cicd-cr-001)
+10. [Referencias](#10-referencias)
 
 ---
 
@@ -108,9 +109,9 @@ Estos CI sustituyen temporalmente al servicio `Payments`/`Proyect`/`User`/`Trans
 
 | ID | CI | Estado actual |
 |---|---|---|
-| CI-INF-repo | Repositorio Git (`github.com/Rigo9119/phx-prototype`) | Existe, rama única `main`, sin protección de rama |
+| CI-INF-repo | Repositorio Git (`github.com/Rigo9119/phx-prototype`) | Rama `main` protegida (requiere PR + check `ci` en verde), historial etiquetado con baselines (`BL-1.0` sobre el commit `384d8dd`) |
 | CI-INF-backend | Backend / base de datos (Supabase-Postgres, según diagnóstico) | **No existe en este repositorio** — deuda pendiente identificada en el diagnóstico |
-| CI-INF-ci | Pipeline de integración continua | **No existe** — propuesto en §7 |
+| CI-INF-ci | Pipeline de integración continua | **Implementado** en `.github/workflows/ci-cd.yml` — ver §9 |
 
 ---
 
@@ -367,7 +368,52 @@ Abrir [http://localhost:3000](http://localhost:3000). El punto de entrada de la 
 
 ---
 
-## 9. Referencias
+## 9. Implementación del pipeline CI/CD (CR-001)
+
+Esta sección documenta la puesta en marcha real de `CI-INF-ci`, ejecutando el flujo de control de cambios definido en §5.1 sobre el propio repositorio.
+
+### 9.1 Change Request
+
+```
+CR-ID:            CR-001
+Título:            Implementar pipeline de CI/CD
+Solicitante:       Rigo Rosero
+CI afectados:      CI-INF-ci, CI-CFG-lint, CI-CFG-pkg
+Tipo de cambio:    [x] Perfectivo
+¿Cambia arquitectura o stack?  [ ] Sí   [x] No — agrega automatización, no modifica el stack de la aplicación
+Justificación:     El diagnóstico previo señala ausencia total de gates automáticos; sin ellos, main
+                   quedó expuesto a cambios sin verificación (§3.5, CI-INF-ci previamente "No existe").
+Impacto / riesgo:  Bajo. No toca código de aplicación, solo agrega .github/workflows/ci-cd.yml.
+Baseline de origen: BL-1.0
+Baseline destino:   BL-1.0 (incremento interno; no cierra baseline nueva — ver §9.4)
+```
+
+Como el cambio no afecta arquitectura ni stack tecnológico, el flujo de §5.1 no exige ADR; pasa directo a rama de feature.
+
+### 9.2 Rama y commits
+
+- Rama: `feat/CR-001-cicd-pipeline`, creada desde `main` en el commit `384d8dd` (baseline `BL-1.0`).
+- Commits en Conventional Commits, con pie `Refs: CR-001`.
+- Pull Request contra `main`, revisado y verificado antes de merge conforme al flujo de §5.1 (pasos 6-9).
+
+### 9.3 Pipeline (`.github/workflows/ci-cd.yml`)
+
+| Job | Dispara en | Pasos | Gate |
+|---|---|---|---|
+| `ci` | Push y PR contra `main` | Checkout → setup pnpm/Node 20 → `pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm build` (export estático, `GITHUB_PAGES=true`) → sube el artefacto `out/` (solo en push a `main`) | Debe estar en verde para poder mergear el PR (protección de rama, §5.4) |
+| `deploy` | Push a `main` (después de merge), solo si `ci` pasó | `actions/deploy-pages` publica el artefacto en GitHub Pages | Depende de `needs: ci`; nunca despliega un build que no pasó lint/build |
+
+Herramienta de despliegue: **GitHub Pages**. Se eligió sobre alternativas como Vercel/Netlify porque el prototipo (§1) no tiene API routes ni server actions: es enteramente cliente con datos mock, por lo que admite `output: "export"` (`next.config.ts`) sin pérdida de funcionalidad, y Pages se autentica con el `GITHUB_TOKEN` que Actions provee, sin secrets ni cuentas externas. Las rutas dinámicas (`app/dashboard/[userType]`, `app/register/[userType]`) declaran `generateStaticParams` para los dos valores reales de `userType` (`client`, `investor`, ver `lib/constatns.ts`). Esto cierra la brecha de `CI-INF-ci` identificada en §3.5 y actualiza la herramienta de despliegue que §7.2 proponía.
+
+### 9.4 Evidencia
+
+> _Espacio para adjuntar, tras la ejecución real en GitHub: (1) captura del PR de CR-001 con el check `ci` en verde, (2) captura del run de Actions mostrando los jobs `ci` y `deploy` completados, (3) captura del sitio publicado en GitHub Pages, (4) `git log --oneline --graph` mostrando la rama mergeada y el tag `BL-1.0`._
+
+Este incremento no cierra una baseline nueva: `CI-INF-ci` pasa a estado "Implementado" dentro de `BL-1.0`, sin alterar el contenido de código, datos o configuración de la aplicación que esa baseline ya congeló. Una baseline `BL-2.0` (§4.1) sigue pendiente de los demás incrementos propuestos (`BL-1.1` a `BL-1.3`).
+
+---
+
+## 10. Referencias
 
 - IEEE. (2012). *IEEE Std 828-2012 — IEEE Standard for Configuration Management in Systems and Software Engineering*. IEEE.
 - ISO/IEC/IEEE. (2017). *ISO/IEC/IEEE 12207:2017 — Systems and software engineering — Software life cycle processes*. ISO.

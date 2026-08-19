@@ -9,6 +9,10 @@ import { BarChartStackCmp } from "./components/charts/barChartStack";
 import { mockCuotas } from "@/data/mockdata/cuotas";
 import type { PaymentFee } from "@/lib/types";
 
+export function generateStaticParams() {
+	return [{ userType: "client" }, { userType: "investor" }];
+}
+
 export default async function Page({
 	params,
 }: {
