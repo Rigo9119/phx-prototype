@@ -9,6 +9,7 @@ interface InputFieldProps {
   type: string;
   value: string;
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
 }
 
 export default function InputField({
@@ -18,6 +19,7 @@ export default function InputField({
   type,
   value,
   onChange,
+  error,
 }: InputFieldProps) {
   return (
     <div className="w-full">
@@ -29,6 +31,7 @@ export default function InputField({
         value={value}
         onChange={onChange}
       />
+      {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>
   );
 }

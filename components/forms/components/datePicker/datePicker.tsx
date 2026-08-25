@@ -18,9 +18,10 @@ interface DatePickerprops {
   date: Date;
   label: string;
   setDate: React.Dispatch<React.SetStateAction<Date>>;
+  error?: string;
 }
 
-export function DatePicker({ date, label, setDate }: DatePickerprops) {
+export function DatePicker({ date, label, setDate, error }: DatePickerprops) {
   return (
     <div className="flex flex-col">
       <Label className="pb-1">{label}</Label>
@@ -46,6 +47,7 @@ export function DatePicker({ date, label, setDate }: DatePickerprops) {
           />
         </PopoverContent>
       </Popover>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>
   );
 }
