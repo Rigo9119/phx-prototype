@@ -2,12 +2,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RegisterForm } from "./registerForm";
+import { AuthProvider } from "@/lib/auth/authContext";
 
 const pushMock = vi.fn();
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
+
+function renderRegisterForm(userType: string) {
+  return render(
+    <AuthProvider>
+      <RegisterForm userType={userType} />
+    </AuthProvider>
+  );
+}
 
 async function fillValidCoreFields(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByPlaceholderText("Nombre"), "Juan");
@@ -47,7 +56,7 @@ describe("RegisterForm", () => {
 
   it("blocks submit and shows an error when a required field is empty", async () => {
     const user = userEvent.setup();
-    render(<RegisterForm userType="client" />);
+    renderRegisterForm("client");
 
     await user.click(screen.getByRole("button", { name: /enviar/i }));
 
@@ -57,7 +66,7 @@ describe("RegisterForm", () => {
 
   it("blocks submit and shows an error when the email is invalid", async () => {
     const user = userEvent.setup();
-    render(<RegisterForm userType="client" />);
+    renderRegisterForm("client");
 
     await fillValidCoreFields(user);
     await user.clear(screen.getByPlaceholderText("Correo electronico"));
@@ -72,7 +81,7 @@ describe("RegisterForm", () => {
   it("includes the selected file in the submitted values (bug #1)", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const user = userEvent.setup();
-    render(<RegisterForm userType="client" />);
+    renderRegisterForm("client");
 
     await fillValidCoreFields(user);
     const file = await uploadFile(user);
@@ -89,7 +98,7 @@ describe("RegisterForm", () => {
   it("includes the picked date in the submitted values (bug #2)", async () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const user = userEvent.setup();
-    render(<RegisterForm userType="client" />);
+    renderRegisterForm("client");
 
     await fillValidCoreFields(user);
     await uploadFile(user);

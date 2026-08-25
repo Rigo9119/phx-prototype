@@ -36,15 +36,9 @@ export default function Home() {
           <div className="flex flex-row items-center justify-center gap-4">
             <Link
               className="bg-black px-4 py-2 text-white rounded-md"
-              href={`/dashboard/${USER_TYPES.CLIENT}`}
+              href="/login"
             >
-              Cliente
-            </Link>
-            <Link
-              className="bg-black px-4 py-2 text-white rounded-md"
-              href={`/dashboard/${USER_TYPES.INVESTOR}`}
-            >
-              Inversionista
+              Iniciar sesion
             </Link>
           </div>
         </div>
