@@ -7,12 +7,15 @@ import { FileInput } from "../components/fileInput/fileInput";
 import { useRouter } from "next/navigation";
 import { userSchema } from "@/lib/schemas/user.schema";
 import { getFieldError } from "../utils/getFieldError";
+import { useAuth } from "@/lib/auth/authContext";
+import { routeSegmentToRole } from "@/lib/auth/roleToRouteSegment";
 
 interface RegisterFormProps {
   userType: string;
 }
 export function RegisterForm({ userType }: RegisterFormProps) {
   const router = useRouter()
+  const { register } = useAuth();
   const form = useForm({
     defaultValues: {
       name: "",
@@ -29,6 +32,17 @@ export function RegisterForm({ userType }: RegisterFormProps) {
     },
     onSubmit: async ({ value }) => {
       console.log('register form data: ', value)
+
+      const role = routeSegmentToRole(userType);
+      if (role) {
+        await register({
+          name: value.name,
+          lastName: value.lastName,
+          email: value.email,
+          role,
+        });
+      }
+
       router.push(`/dashboard/${userType}`)
     }
   });

@@ -1,3 +1,4 @@
+"use client";
 import {
   Sidebar,
   SidebarContent,
@@ -5,13 +6,22 @@ import {
   SidebarGroup,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth/authContext";
 
 interface DashboardSidebarProps {
   title: string;
 }
 
 export default function DashboardSidebar({ title }: DashboardSidebarProps) {
+  const router = useRouter();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push("/");
+  };
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -21,12 +31,13 @@ export default function DashboardSidebar({ title }: DashboardSidebarProps) {
         <SidebarGroup>Dashboard sidebar</SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <Link
-          href="/"
+        <button
+          type="button"
+          onClick={handleLogout}
           className="flex items-center justify-center bg-red-700 text-white rounded-md px-4 py-2 "
         >
           Log out
-        </Link>
+        </button>
       </SidebarFooter>
     </Sidebar>
   );
