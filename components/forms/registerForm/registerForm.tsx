@@ -2,10 +2,11 @@
 import { useForm } from "@tanstack/react-form";
 import InputField from "../components/inputField/inputField";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 import { DatePicker } from "../components/datePicker/datePicker";
 import { FileInput } from "../components/fileInput/fileInput";
 import { useRouter } from "next/navigation";
+import { userSchema } from "@/lib/schemas/user.schema";
+import { getFieldError } from "../utils/getFieldError";
 
 interface RegisterFormProps {
   userType: string;
@@ -22,8 +23,8 @@ export function RegisterForm({ userType }: RegisterFormProps) {
       cellphone: "",
       address: "",
       city: "",
-      dateOfBirth: "",
-      file: "",
+      dateOfBirth: new Date(),
+      file: null as File | null,
       userType: userType,
     },
     onSubmit: async ({ value }) => {
@@ -31,8 +32,6 @@ export function RegisterForm({ userType }: RegisterFormProps) {
       router.push(`/dashboard/${userType}`)
     }
   });
-
-  const [dateOfBirth, setDateOfBirth] = useState<Date>(new Date());
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -45,7 +44,7 @@ export function RegisterForm({ userType }: RegisterFormProps) {
         form.handleSubmit()
       }}>
         <div>
-          <form.Field name="name">
+          <form.Field name="name" validators={{ onChange: userSchema.shape.name }}>
             {(field) => {
               return (
                 <InputField
@@ -55,11 +54,12 @@ export function RegisterForm({ userType }: RegisterFormProps) {
                   placeholder="Nombre"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
+                  error={getFieldError(field)}
                 />
               );
             }}
           </form.Field>
-          <form.Field name="lastName">
+          <form.Field name="lastName" validators={{ onChange: userSchema.shape.lastName }}>
             {(field) => {
               return (
                 <InputField
@@ -69,12 +69,13 @@ export function RegisterForm({ userType }: RegisterFormProps) {
                   placeholder="Apellido"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
+                  error={getFieldError(field)}
                 />
               );
             }}
           </form.Field>
         </div>
-        <form.Field name="npi">
+        <form.Field name="npi" validators={{ onChange: userSchema.shape.npi }}>
           {(field) => {
             return (
               <InputField
@@ -84,11 +85,12 @@ export function RegisterForm({ userType }: RegisterFormProps) {
                 placeholder="Cedula"
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value)}
+                error={getFieldError(field)}
               />
             );
           }}
         </form.Field>
-        <form.Field name="email">
+        <form.Field name="email" validators={{ onChange: userSchema.shape.email }}>
           {(field) => {
             return (
               <InputField
@@ -98,11 +100,12 @@ export function RegisterForm({ userType }: RegisterFormProps) {
                 placeholder="Correo electronico"
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value)}
+                error={getFieldError(field)}
               />
             );
           }}
         </form.Field>
-        <form.Field name="cellphone">
+        <form.Field name="cellphone" validators={{ onChange: userSchema.shape.cellphone }}>
           {(field) => {
             return (
               <InputField
@@ -112,11 +115,12 @@ export function RegisterForm({ userType }: RegisterFormProps) {
                 placeholder="Celular"
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value)}
+                error={getFieldError(field)}
               />
             );
           }}
         </form.Field>
-        <form.Field name="address">
+        <form.Field name="address" validators={{ onChange: userSchema.shape.address }}>
           {(field) => {
             return (
               <InputField
@@ -126,11 +130,12 @@ export function RegisterForm({ userType }: RegisterFormProps) {
                 placeholder="Dirección"
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value)}
+                error={getFieldError(field)}
               />
             );
           }}
         </form.Field>
-        <form.Field name="city">
+        <form.Field name="city" validators={{ onChange: userSchema.shape.city }}>
           {(field) => {
             return (
               <InputField
@@ -140,34 +145,37 @@ export function RegisterForm({ userType }: RegisterFormProps) {
                 placeholder="Ciudad"
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value)}
+                error={getFieldError(field)}
               />
             );
           }}
         </form.Field>
-        <form.Field name="dateOfBirth">
-          {() => {
+        <form.Field name="dateOfBirth" validators={{ onChange: userSchema.shape.dateOfBirth }}>
+          {(field) => {
             return (
               <DatePicker
                 label="Fecha de nacimiento"
-                date={dateOfBirth}
-                setDate={setDateOfBirth}
+                date={field.state.value}
+                setDate={(updater) =>
+                  field.handleChange(
+                    typeof updater === "function" ? updater(field.state.value) : updater
+                  )
+                }
+                error={getFieldError(field)}
               />
             );
           }}
         </form.Field>
-        <form.Field name="file">
-          {() => (
-          <FileInput
-            label={""}
-            name={""}
-            onChange={(file: File | null): void => {
-              if (file) {
-                console.log("File selected: ", file);
-              } else {
-                console.log("No file selected.");
-              }
-            }}
-          />
+        <form.Field name="file" validators={{ onChange: userSchema.shape.file }}>
+          {(field) => (
+            <FileInput
+              label="Archivo"
+              name={field.name}
+              onChange={(file: File | null): void => {
+                field.handleChange(file);
+              }}
+              error={getFieldError(field)}
+            />
           )}
         </form.Field>
         <form.Subscribe

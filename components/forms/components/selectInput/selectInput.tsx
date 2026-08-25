@@ -14,6 +14,8 @@ interface SelectInputProps {
   placeholder: string;
   value: string;
   options: SelectOption[];
+  onValueChange: (value: string) => void;
+  error?: string;
 }
 
 export default function SelectInput({
@@ -21,13 +23,15 @@ export default function SelectInput({
   placeholder,
   value,
   options,
+  onValueChange,
+  error,
 }: SelectInputProps) {
   return (
     <div className="w-full">
       <Label>{label}</Label>
-      <Select>
+      <Select value={value || undefined} onValueChange={onValueChange}>
         <SelectTrigger>
-          <SelectValue placeholder={value ? value : placeholder} />
+          <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
@@ -39,6 +43,7 @@ export default function SelectInput({
           </SelectGroup>
         </SelectContent>
       </Select>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
     </div>
   );
 }
