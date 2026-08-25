@@ -22,7 +22,7 @@
 6. [Definición de trazabilidad](#6-definición-de-trazabilidad)
 7. [Modelo de gestión de configuración propuesto](#7-modelo-de-gestión-de-configuración-propuesto)
 8. [Puesta en marcha del prototipo](#8-puesta-en-marcha-del-prototipo)
-9. [Implementación del pipeline CI/CD (CR-001)](#9-implementación-del-pipeline-cicd-cr-001)
+9. [Implementación de Change Requests (CR-001, CR-002, CR-003)](#9-implementación-de-change-requests-cr-001-cr-002-cr-003)
 10. [Síntesis del modelo de gestión de configuración](#10-síntesis-del-modelo-de-gestión-de-configuración)
 11. [Referencias](#11-referencias)
 
@@ -32,7 +32,7 @@
 
 Quimera es una plataforma web que conecta dos tipos de usuario: un **cliente/dreamer** que propone un proyecto y solicita financiación, y un **inversionista** que evalúa y financia ese proyecto (le "presta" el dinero). Un tercer rol, **admin**, administra la plataforma y supervisa las transacciones. El diagnóstico previo identificó cinco servicios lógicos objetivo: `Login/Auth`, `Transactions`, `Proyect`, `User` y `Payments`.
 
-El estado actual del repositorio corresponde exactamente a lo descrito en ese diagnóstico: **solo existe el frontend**, construido en Next.js 15 (App Router) + React 19 + TypeScript, con datos "quemados" en módulos de mock data (`data/mockdata/*`). No hay backend accesible ni persistencia real; el servicio `Login/Auth` no está implementado; no existen pruebas unitarias ni de integración. Esta es la causa raíz por la que este documento trata al frontend actual como una **base de partida auditable**, no como un sistema completo.
+El estado del repositorio al momento del diagnóstico correspondía exactamente a lo descrito en ese documento: **solo existía el frontend**, construido en Next.js 15 (App Router) + React 19 + TypeScript, con datos "quemados" en módulos de mock data (`data/mockdata/*`), sin backend accesible ni persistencia real, sin el servicio `Login/Auth`, y sin pruebas unitarias ni de integración. Esta es la causa raíz por la que este documento trata al frontend como una **base de partida auditable**, no como un sistema completo — y por la que las dos primeras Change Requests ejecutadas sobre este plan (CR-002, CR-003; §9.5–§9.7) atacan directamente esos dos últimos puntos: formularios sin validar ni probar, y ausencia total de `Login/Auth`. El backend real (Supabase/Postgres) sigue sin existir en este repositorio — deuda pendiente para BL-1.2.
 
 El objetivo de este documento es distinto al de la actividad anterior. El diagnóstico identificó *qué salió mal* (ambigüedad de alcance, rotación de equipo, cambios de stack sin gobierno, ausencia de documentación y de pruebas). Este documento propone el **mecanismo de gestión de configuración** que, de retomarse el proyecto, evita que esos mismos problemas se repitan: cómo se identifican y versionan los componentes (CI), cómo se congelan puntos de referencia estables (baselines), cómo se autoriza y registra cualquier cambio — incluyendo cambios de arquitectura o de stack, que fueron el origen de buena parte de la deuda técnica — y cómo se traza cada cambio hasta el requerimiento y el hallazgo que lo motiva.
 
@@ -71,6 +71,8 @@ Un **configuration item (CI)** es cualquier artefacto que se pone bajo control d
 | CI-SRC-cmp-04 | Sistema de diseño (UI primitives) | `components/ui/**` | Transversal | Rigo Rosero |
 | CI-SRC-lib-01 | Contrato de tipos del dominio | `lib/types.ts` | Transversal | Rigo Rosero |
 | CI-SRC-lib-02 | Constantes de dominio | `lib/constatns.ts`¹ | Transversal | Rigo Rosero |
+| CI-SRC-lib-03 | Schemas de validación | `lib/schemas/*` | Transversal (`User`, `Proyect`, auth) | Rigo Rosero |
+| CI-SRC-lib-04 | Autenticación y autorización | `lib/auth/*`, `components/auth/**` | Servicio `Login/Auth` (BL-1.1) | Rigo Rosero |
 
 ¹ Nombre de archivo tal como existe en el repositorio; ver hallazgo de trazabilidad §6.
 
@@ -84,6 +86,7 @@ Estos CI sustituyen temporalmente al servicio `Payments`/`Proyect`/`User`/`Trans
 | CI-DAT-statements | Mock de estados de cuenta | `data/mockdata/statements.ts` | Servicio `Payments` |
 | CI-DAT-cuotas | Mock de cuotas | `data/mockdata/cuotas.ts` | Servicio `Payments` |
 | CI-DAT-transactions | Mock de transacciones | `data/mockdata/transactions.ts` | Servicio `Transactions` |
+| CI-DAT-credentials | Mock de credenciales | `data/mockdata/credentials.ts` | Servicio `Login/Auth` — separado de `CI-DAT-users` a propósito, ver `docs/adr/0001` |
 
 ### 3.3 CI de configuración y build (CFG)
 
@@ -103,7 +106,7 @@ Estos CI sustituyen temporalmente al servicio `Payments`/`Proyect`/`User`/`Trans
 |---|---|---|---|
 | CI-DOC-readme | Este documento (plan de SCM) | `README.md` | Editable manualmente |
 | CI-DOC-diagnostico | Diagnóstico de mantenimiento previo | *externo* (Análisis de Quimera, jul. 2026) | Insumo, no versionado en este repo |
-| CI-DOC-adr | Registro de decisiones de arquitectura (propuesto) | `docs/adr/*` | Ver §5.3 — a crear |
+| CI-DOC-adr | Registro de decisiones de arquitectura | `docs/adr/*` | Ver §5.3 — `0001-client-side-auth-under-static-export.md` creado en CR-003 |
 | CI-DOC-changelog | Historial de versiones | `CHANGELOG.md` (propuesto) | **Autogenerado**, nunca editado a mano |
 
 ### 3.5 CI de infraestructura (INF)
@@ -140,9 +143,9 @@ Solo referencia histórica  PBL congelada
 |---|---|---|---|
 | **BL-0.0** — Legado | Histórico, no reproducible | Backend Ruby on Rails + frontend AngularJS, y el intento posterior con Supabase. Repos no accesibles según el diagnóstico. | N/A — solo se documenta como antecedente |
 | **BL-1.0** — Frontend MVP (**baseline actual de este repositorio**) | **PBL vigente** | Todo lo listado en §3.1–§3.3, en el estado del commit `384d8dd` (rama `main`) | CI-SRC-*, CI-DAT-*, CI-CFG-* |
-| **BL-1.1** — Autenticación y autorización | Propuesta | Implementación real del servicio `Login/Auth`, ausente hoy | CI-SRC-app-02 extendido, nuevo `lib/auth/*` |
+| **BL-1.1** — Autenticación y autorización | Contenido implementado en CR-003; baseline formal aún sin etiquetar (decisión de CCB pendiente) | Servicio `Login/Auth`: `AuthProvider`, guardado de rutas del lado del cliente, login/registro | CI-SRC-app-02 extendido, `CI-SRC-lib-04`, `CI-DAT-credentials`, `CI-DOC-adr` |
 | **BL-1.2** — Backend real | Propuesta | Reemplazo de CI-DAT-* por integraciones a Supabase/Postgres para `User`, `Proyect`, `Payments`, `Transactions` | CI-DAT-* migran a CI-SRC-*/CI-INF-backend |
-| **BL-1.3** — Cobertura de pruebas | Propuesta | Suite de pruebas unitarias e integración (Jest + React Testing Library, mencionadas como intención en el diagnóstico pero nunca alcanzadas) | Nuevos CI `__tests__/*` |
+| **BL-1.3** — Cobertura de pruebas | Contenido implementado en CR-002/CR-003 (Vitest, no Jest — ver §9.5); baseline formal aún sin etiquetar | Suite de pruebas unitarias e integración, 48 pruebas / ~87% statements sobre formularios y auth | `CI-SRC-lib-03`, pruebas co-ubicadas junto a cada CI de código |
 | **BL-2.0** — Release candidate | Propuesta | Endurecimiento de seguridad, definición de términos legales (vacío señalado en el diagnóstico), pipeline de CI/CD activo | Todos los anteriores + CI-INF-ci |
 
 **Regla de congelamiento:** cada baseline se marca con un *tag* de Git anotado (`git tag -a BL-1.0 -m "..."`) sobre el commit exacto que la compone. Ningún CI dentro de una baseline cerrada se modifica sin pasar por el procedimiento de la §5; el cambio da lugar a una baseline nueva, nunca a una edición retroactiva de la anterior.
@@ -253,9 +256,9 @@ La trazabilidad conecta cada CI con el requerimiento/hallazgo que lo origina, la
 | Servicio `Proyect` (creación de solicitud de financiación) | `components/forms/createProyectForm`, `components/sheets/createProyectSheet` | BL-1.0 | Verificación manual |
 | Servicio `Payments` (cuotas y estados de cuenta) | CI-SRC-app-03, CI-SRC-cmp-03, CI-DAT-statements, CI-DAT-cuotas | BL-1.0 | Verificación manual |
 | Servicio `Transactions` (panel admin) | CI-SRC-app-04, CI-DAT-transactions | BL-1.0 | Verificación manual |
-| Servicio `Login/Auth` (no implementado — deuda técnica confirmada en el diagnóstico) | *pendiente* | BL-1.1 (propuesta) | Pruebas de integración de sesión, a definir en BL-1.3 |
-| Mantenimiento preventivo: falta de validación de formularios (ejemplo citado en el diagnóstico) | `components/forms/components/inputField`, uso de `@tanstack/react-form` + `zod` | BL-1.0 | Revisión de código; falta prueba automatizada — brecha abierta |
-| Falta de pruebas unitarias/integración (hallazgo central del diagnóstico) | *no existe CI de pruebas hoy* | BL-1.3 (propuesta) | Cobertura mínima a definir por CCB |
+| Servicio `Login/Auth` (no implementado — deuda técnica confirmada en el diagnóstico) | `lib/auth/*`, `components/auth/routeGuard`, `app/login` | BL-1.1 (implementado en CR-003, ver §9.6) | 8 pruebas (`authContext`, `roleToRouteSegment`) + verificación manual del flujo completo |
+| Mantenimiento preventivo: falta de validación de formularios (ejemplo citado en el diagnóstico) | `lib/schemas/*`, `components/forms/utils/getFieldError.ts`, wiring en `registerForm`/`createProyectForm`/`loginForm` | BL-1.0 (implementado en CR-002, ver §9.5) | Pruebas automatizadas por schema y por formulario — brecha cerrada |
+| Falta de pruebas unitarias/integración (hallazgo central del diagnóstico) | Vitest + Testing Library, 48 pruebas | BL-1.3 (implementado en CR-002/CR-003) | `pnpm test` / `pnpm test:coverage` — ver §9.7 |
 | Ausencia de documentación técnica que "diera visión del proyecto" (hallazgo del diagnóstico) | CI-DOC-readme (este documento), CI-DOC-adr (propuesto) | BL-1.0 en adelante | Revisión de CCB en cada CR de arquitectura |
 | Cambios de stack sin gobierno (Ruby→Supabase, Angular→React) | CI-DOC-adr obligatorio para CR de arquitectura (§5.3) | A partir de BL-1.1 | Ningún CR de arquitectura se aprueba sin ADR |
 
@@ -266,6 +269,13 @@ Cada commit referencia su `CR-ID` en el pie del mensaje (`Refs: CR-014`), y cada
 ### 6.3 Hallazgo de higiene menor
 
 Durante la identificación de CI se encontró que `lib/constatns.ts` (CI-SRC-lib-02) tiene un error tipográfico en el nombre de archivo (`constatns` en vez de `constants`) y que `data/mockdata/users.ts` usa la llave `npiType`, mientras `lib/types.ts` declara el campo como `npyType` en el tipo `User`. Se documentan aquí como hallazgos de trazabilidad de datos — no se corrigen en este entregable para no invalidar la baseline BL-1.0 fuera de un CR formal, conforme a la propia estrategia de control de cambios definida en la §5.
+
+Durante la exploración previa a CR-002/CR-003 (§9.5, §9.6) se encontraron dos hallazgos adicionales de la misma naturaleza, tampoco corregidos aquí por la misma razón:
+
+- `data/mockdata/users.ts` usa la llave `phone`, mientras `lib/types.ts` declara el campo como `cellphone` en el tipo `User` — mismo patrón que `npiType`/`npyType`.
+- `components/forms/createProyectForm/createProyectForm.tsx` usa nombres de campo (`transactionId`, entre otros) que no coinciden con las llaves de `lib/types.ts`'s `Proyect` (`proyectID`, `createdBy`, `interestNMV`, etc.).
+
+Por esta razón, los schemas de Zod introducidos en CR-002 (`lib/schemas/*`) se escribieron contra las llaves reales de cada formulario, no derivados de `lib/types.ts` — derivar de un tipo con estos desajustes habría producido validación sin sentido o, peor, habría propagado un rename no solicitado fuera del alcance de ese CR.
 
 ---
 
@@ -369,11 +379,11 @@ Abrir [http://localhost:3000](http://localhost:3000). El punto de entrada de la 
 
 ---
 
-## 9. Implementación del pipeline CI/CD (CR-001)
+## 9. Implementación de Change Requests (CR-001, CR-002, CR-003)
 
-Esta sección documenta la puesta en marcha real de `CI-INF-ci`, ejecutando el flujo de control de cambios definido en §5.1 sobre el propio repositorio.
+Esta sección documenta la puesta en marcha real de tres CR, cada uno ejecutando el flujo de control de cambios definido en §5.1 sobre el propio repositorio.
 
-### 9.1 Change Request
+### 9.1 Change Request (CR-001)
 
 ```
 CR-ID:            CR-001
@@ -438,6 +448,107 @@ Este incremento no cierra una baseline nueva: `CI-INF-ci` pasa a estado "Impleme
 
 ---
 
+### 9.5 CR-002: Validación de formularios (Zod) y TDD
+
+```
+CR-ID:            CR-002
+Título:            Validación Zod en formularios + TDD
+Solicitante:       Rigo Rosero
+CI afectados:      CI-SRC-cmp-01, CI-SRC-lib-03
+Tipo de cambio:    [x] Perfectivo  [x] Correctivo
+¿Cambia arquitectura o stack?  [ ] Sí   [x] No — @tanstack/react-form y zod ya
+                   estaban instalados; Vitest es un test runner, no un cambio
+                   de arquitectura de aplicación
+Justificación:     El diagnóstico y el §6.1 marcan como brecha abierta la
+                   falta de validación de formularios y de pruebas
+                   automatizadas (BL-1.3, propuesta).
+Impacto / riesgo:  Medio. Wiring de validación existente + 3 bugs
+                   silenciosos encontrados y corregidos (ver abajo), cada uno
+                   con su prueba de regresión.
+Baseline de origen: BL-1.0
+Baseline destino:   BL-1.0 (incremento interno; contenido de BL-1.3, ver §4.1)
+```
+
+Cierra la brecha del §6.1: `@tanstack/react-form` y `zod` ya estaban instalados pero sin conectar. Se conectan vía el validador Standard Schema nativo de TanStack Form (`validators: { onChange: schema }`), sin `@tanstack/zod-form-adapter` (estaba instalado sin uso en ningún archivo; se removió). Los schemas (`lib/schemas/user.schema.ts`, `lib/schemas/proyect.schema.ts`) se escriben contra las llaves reales de cada formulario, no derivadas de `lib/types.ts` (ver §6.3).
+
+Wiring la validación de forma correcta expuso tres bugs silenciosos, ninguno documentado antes de este CR, cada uno fijado con TDD (prueba roja antes que la implementación):
+
+1. `registerForm.tsx`: el campo `file` nunca llamaba `field.handleChange` — el archivo seleccionado nunca llegaba al estado del formulario.
+2. `registerForm.tsx`: `dateOfBirth` vivía en un `useState` local desconectado del `field` de TanStack Form.
+3. `createProyectForm.tsx`: el `Select` de `status` no tenía `onValueChange` en ningún lado — el estado del proyecto nunca podía asignarse. El formulario ni siquiera tenía `onSubmit` (hallazgo adicional, no listado originalmente, corregido como corolario necesario del wiring).
+
+Rama: `feat/CR-002-forms-validation-tdd`, PR contra `main`, CI en verde, merge por squash. Commit: `feat(forms): validacion Zod + TDD en formularios (CR-002)`, `Refs: CR-002`.
+
+### 9.6 CR-003: Flujo de autenticación
+
+```
+CR-ID:            CR-003
+Título:            Login/registro + guardado de rutas
+Solicitante:       Rigo Rosero
+CI afectados:      CI-SRC-lib-04, CI-DAT-credentials, CI-DOC-adr
+Tipo de cambio:    [x] Adaptativo  [x] Perfectivo
+¿Cambia arquitectura o stack?  [x] Sí (requiere ADR) — introduce el primer
+                   estado de sesión de la aplicación y una estrategia de
+                   guardado de rutas condicionada por output "export"
+Justificación:     BL-1.1 (§4.1): servicio Login/Auth, ausente desde el
+                   diagnóstico original.
+Impacto / riesgo:  Medio-alto. Toca app/layout.tsx, ambos layouts
+                   protegidos y registerForm.tsx (compartido con CR-002,
+                   coordinado para que no se pisaran los cambios).
+Baseline de origen: BL-1.0 (sobre CR-002 ya mergeado)
+Baseline destino:   BL-1.0 (incremento interno; contenido de BL-1.1, ver §4.1)
+```
+
+Como el cambio sí afecta arquitectura (nuevo estado de sesión, nueva estrategia de protección de rutas), pasó por ADR antes de implementarse: `docs/adr/0001-client-side-auth-under-static-export.md`. La restricción central: `next.config.ts` fija `output: "export"` de forma incondicional (CR-001), por lo que Next.js Middleware no puede ejecutarse — no hay runtime de servidor en tiempo de petición. El guardado de `/dashboard/*` y `/admin` es enteramente del lado del cliente (`components/auth/routeGuard/routeGuard.tsx`), montado como hoja cliente dentro de los layouts existentes, que permanecen como server components.
+
+`lib/auth/authContext.tsx` arranca su estado en `"idle"`, nunca lee `localStorage` de forma anticipada — el HTML pre-renderizado del export estático no tiene acceso a él, y una lectura eager produciría un *hydration mismatch*. Las credenciales mock viven en `data/mockdata/credentials.ts`, separadas de `data/mockdata/users.ts` (servicios distintos según §1). Los dos vocabularios de "tipo de usuario" que coexistían sin resolver (`USER_TYPES` cliente/inversionista vs. `UserType` creditor/debtor) no se unificaron — se mapean en el único punto de contacto, `lib/auth/roleToRouteSegment.ts`, usado solo para el redirect posterior a login/registro. Detalle completo de alternativas consideradas y consecuencias en el ADR.
+
+Rama: `feat/CR-003-auth-flow`, PR contra `main`, CI en verde, merge por squash. Commit: `feat(auth): flujo de login/registro con guardado de rutas (CR-003)`, `Refs: CR-003`.
+
+### 9.7 Métricas y evidencia (CR-002 + CR-003)
+
+| Métrica | Antes (BL-1.0, previo a CR-002) | Después (`main`, post CR-003) |
+|---|---|---|
+| Pruebas automatizadas | 0 | 48 (9 archivos de prueba) |
+| Cobertura de pruebas (statements) | 0% | 87.37% (206 statements evaluados) |
+| Cobertura de pruebas (funciones) | 0% | 92.47% |
+| Formularios con validación por schema | 0/2 | 3/3 (`registerForm`, `createProyectForm`, `loginForm`) |
+| Bugs silenciosos en formularios | 3 sin documentar, sin prueba | 0 — cada uno con su prueba de regresión |
+| Servicio `Login/Auth` | No implementado | Implementado (`AuthProvider`, login, registro, logout) |
+| Rutas protegidas | 0 | 2 (`/dashboard/[userType]`, `/admin`) |
+| ADR registrados | 0 | 1 (`docs/adr/0001`) |
+
+Evidencia de ejecución (`main`, commit `6e3e202`):
+
+```
+$ pnpm test
+ Test Files  9 passed (9)
+      Tests  48 passed (48)
+
+$ pnpm test:coverage
+Statements   : 87.37% ( 180/206 )
+Branches     : 64.7%  ( 44/68 )
+Functions    : 92.47% ( 86/93 )
+Lines        : 87.56% ( 176/201 )
+
+$ pnpm lint
+✔ No ESLint warnings or errors
+
+$ pnpm build
+✓ Generating static pages (11/11)
+✓ Exporting (3/3)
+```
+
+```
+$ git log --oneline -4
+6e3e202 feat(auth): flujo de login/registro con guardado de rutas (CR-003)
+f2d9ada feat(forms): validacion Zod + TDD en formularios (CR-002)
+1c6d5dd docs(readme): evidencia de CR-001 y sintesis del modelo
+6bbe305 feat(ci): implementar pipeline CI/CD (CR-001)
+```
+
+---
+
 ## 10. Síntesis del modelo de gestión de configuración
 
 Esta sección resume, en un solo lugar, cómo el estado actual del repositorio satisface cada criterio evaluado en la actividad. No introduce información nueva: enlaza a la sección donde cada elemento ya está definido y, cuando aplica, a la evidencia concreta de su ejecución.
@@ -447,12 +558,12 @@ Esta sección resume, en un solo lugar, cómo el estado actual del repositorio s
 | **Implementación en Git** | Historial real con commits en Conventional Commits, rama de feature (`feat/CR-001-cicd-pipeline`), PR revisado antes de merge, baseline etiquetada con `git tag -a` | §9.2, §9.4 |
 | **Estrategia de branching y versionamiento** | Trunk-based con ramas de vida corta `<tipo>/CR-<id>-<slug>`, `main` protegida (PR + check `ci` en verde obligatorio), SemVer por baseline (§4) | §4, §5.4 |
 | **Automatización CI/CD** | `.github/workflows/ci-cd.yml`: job `ci` (lint + build) en cada push/PR, job `deploy` a GitHub Pages gateado por `needs: ci`, ejecutado de punta a punta sobre este mismo repositorio | §9.3, §9.4 (deploy en vivo: https://rigo9119.github.io/phx-prototype/) |
-| **Trazabilidad y control de cambios** | Flujo CR → rama → PR → checks → merge → CI-INF-ci aplicado en CR-001; cada commit referencia `Refs: CR-001`; matriz de trazabilidad requerimiento→CI→baseline en §6 | §5.1, §6, §9.1 |
-| **Documentación y evidencias** | Este documento (`CI-DOC-readme`) mantenido bajo control de versiones junto al código; capturas reales del deploy, del historial de despliegues y del commit verificado | §9.4 |
+| **Trazabilidad y control de cambios** | Flujo CR → rama → PR → checks → merge repetido tres veces (CR-001, CR-002, CR-003); cada commit referencia su `Refs: CR-<id>`; matriz de trazabilidad requerimiento→CI→baseline en §6, actualizada tras cada CR | §5.1, §6, §9.1, §9.5, §9.6 |
+| **Documentación y evidencias** | Este documento (`CI-DOC-readme`) mantenido bajo control de versiones junto al código; ADR para el único CR que tocó arquitectura (§5.3, CR-003); métricas antes/después con salida real de `pnpm test`/`lint`/`build` | §9.4, §9.7, `docs/adr/0001` |
 
 ### 10.1 El modelo en una frase
 
-Todo cambio a un CI bajo control (§3) pasa por una Change Request (§5.2) que se implementa en una rama corta, se valida con el pipeline automático (§9.3) antes de poder mergearse a `main`, y queda trazado hacia atrás — commit → CR → requerimiento (§6) — y hacia adelante, hasta el despliegue verificable en producción. CR-001 (§9) es la primera ejecución completa de ese ciclo sobre el propio repositorio, no solo su descripción.
+Todo cambio a un CI bajo control (§3) pasa por una Change Request (§5.2) que se implementa en una rama corta, se valida con el pipeline automático (§9.3) antes de poder mergearse a `main`, y queda trazado hacia atrás — commit → CR → requerimiento (§6) — y hacia adelante, hasta el despliegue verificable en producción. CR-001 (§9.1–9.4) es la primera ejecución completa de ese ciclo; CR-002 (§9.5) y CR-003 (§9.6) lo repiten sobre cambios de mayor riesgo — uno estrictamente perfectivo, el otro con ADR de por medio — y cierran, con evidencia medible (§9.7), dos de las tres brechas que el diagnóstico original señaló como no resueltas.
 
 ---
 
