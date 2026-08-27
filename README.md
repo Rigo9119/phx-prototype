@@ -1,4 +1,4 @@
-# Plan de Gestión de Configuración de Software — Proyecto Quimera
+# Gestión de Configuración y Mantenimiento de Software — Proyecto Quimera
 
 **Repositorio técnico:** `phx-prototype`
 **Curso:** Gestión de Configuración y Mantenimiento de Software
@@ -8,11 +8,18 @@
 **Autor:** Rigo Armando Rosero Castillo
 **Fecha:** Agosto 2026
 
+**Alcance de este documento.** Es un entregable vivo, versionado junto al código, con dos partes:
+**Parte I** (§1–§11) — plan de gestión de configuración (Unidad 2).
+**Parte II** (§12–§19) — estrategias de mantenimiento y evolución para mejorar calidad y sostenibilidad (Unidad 3).
+La Parte II reutiliza los CI, baselines y procedimientos definidos en la Parte I; se recomienda leerla después de la §6.
+
 > **Nota de nomenclatura.** Por el acuerdo de anonimización establecido en el diagnóstico previo de esta serie de actividades (*Mantenimiento y Evolución del Software: Análisis de Quimera*, julio 2026), el sistema se referencia como **Quimera**. El nombre técnico interno del código fuente, tal como aparece en `package.json` y en el repositorio, es `phx-prototype`. Ambos nombres identifican el mismo sistema.
 
 ---
 
 ## Tabla de contenido
+
+**Parte I — Plan de gestión de configuración (Unidad 2)**
 
 1. [Contexto y alcance](#1-contexto-y-alcance)
 2. [Estándares de referencia](#2-estándares-de-referencia)
@@ -25,6 +32,17 @@
 9. [Implementación de Change Requests (CR-001, CR-002, CR-003)](#9-implementación-de-change-requests-cr-001-cr-002-cr-003)
 10. [Síntesis del modelo de gestión de configuración](#10-síntesis-del-modelo-de-gestión-de-configuración)
 11. [Referencias](#11-referencias)
+
+**Parte II — Calidad y sostenibilidad: mantenimiento y evolución (Unidad 3)**
+
+12. [Alcance de la Parte II](#12-alcance-de-la-parte-ii)
+13. [Análisis del diagnóstico inicial y oportunidades de mejora](#13-análisis-del-diagnóstico-inicial-y-oportunidades-de-mejora)
+14. [Propuesta de solución — Estrategia de refactorización](#14-propuesta-de-solución--estrategia-de-refactorización)
+15. [Propuesta de solución — Estrategia de modernización](#15-propuesta-de-solución--estrategia-de-modernización)
+16. [Implementación](#16-implementación)
+17. [Evaluación de impacto](#17-evaluación-de-impacto)
+18. [Documentación y soporte](#18-documentación-y-soporte)
+19. [Referencias adicionales (Parte II)](#19-referencias-adicionales-parte-ii)
 
 ---
 
@@ -74,7 +92,7 @@ Un **configuration item (CI)** es cualquier artefacto que se pone bajo control d
 | CI-SRC-lib-03 | Schemas de validación | `lib/schemas/*` | Transversal (`User`, `Proyect`, auth) | Rigo Rosero |
 | CI-SRC-lib-04 | Autenticación y autorización | `lib/auth/*`, `components/auth/**` | Servicio `Login/Auth` (BL-1.1) | Rigo Rosero |
 
-¹ Nombre de archivo tal como existe en el repositorio; ver hallazgo de trazabilidad §6.
+¹ Nombre de archivo tal como existía en la baseline BL-1.0; ver hallazgo de trazabilidad §6.3. Renombrado a `lib/constants.ts` en CR-004 (§16), ya bajo procedimiento formal de control de cambios.
 
 ### 3.2 CI de datos (DAT)
 
@@ -268,12 +286,12 @@ Cada commit referencia su `CR-ID` en el pie del mensaje (`Refs: CR-014`), y cada
 
 ### 6.3 Hallazgo de higiene menor
 
-Durante la identificación de CI se encontró que `lib/constatns.ts` (CI-SRC-lib-02) tiene un error tipográfico en el nombre de archivo (`constatns` en vez de `constants`) y que `data/mockdata/users.ts` usa la llave `npiType`, mientras `lib/types.ts` declara el campo como `npyType` en el tipo `User`. Se documentan aquí como hallazgos de trazabilidad de datos — no se corrigen en este entregable para no invalidar la baseline BL-1.0 fuera de un CR formal, conforme a la propia estrategia de control de cambios definida en la §5.
+Durante la identificación de CI se encontró que `lib/constatns.ts` (CI-SRC-lib-02) tiene un error tipográfico en el nombre de archivo (`constatns` en vez de `constants`) y que `data/mockdata/users.ts` usa la llave `npiType`, mientras `lib/types.ts` declara el campo como `npyType` en el tipo `User`. Se documentan aquí como hallazgos de trazabilidad de datos — no se corrigen en este entregable para no invalidar la baseline BL-1.0 fuera de un CR formal, conforme a la propia estrategia de control de cambios definida en la §5. **Ambos se resuelven en la Parte II mediante CR-004 (§16), ejecutando ese procedimiento formal en lugar de una corrección silenciosa.**
 
 Durante la exploración previa a CR-002/CR-003 (§9.5, §9.6) se encontraron dos hallazgos adicionales de la misma naturaleza, tampoco corregidos aquí por la misma razón:
 
-- `data/mockdata/users.ts` usa la llave `phone`, mientras `lib/types.ts` declara el campo como `cellphone` en el tipo `User` — mismo patrón que `npiType`/`npyType`.
-- `components/forms/createProyectForm/createProyectForm.tsx` usa nombres de campo (`transactionId`, entre otros) que no coinciden con las llaves de `lib/types.ts`'s `Proyect` (`proyectID`, `createdBy`, `interestNMV`, etc.).
+- `data/mockdata/users.ts` usa la llave `phone`, mientras `lib/types.ts` declara el campo como `cellphone` en el tipo `User` — mismo patrón que `npiType`/`npyType`. **Resuelto en CR-004 (§16).**
+- `components/forms/createProyectForm/createProyectForm.tsx` usa nombres de campo (`transactionId`, entre otros) que no coinciden con las llaves de `lib/types.ts`'s `Proyect` (`proyectID`, `createdBy`, `interestNMV`, etc.). **Permanece diferido — ver §16.4 (oportunidades no ejecutadas en esta iteración).**
 
 Por esta razón, los schemas de Zod introducidos en CR-002 (`lib/schemas/*`) se escribieron contra las llaves reales de cada formulario, no derivados de `lib/types.ts` — derivar de un tipo con estos desajustes habría producido validación sin sentido o, peor, habría propagado un rename no solicitado fuera del alcance de ese CR.
 
@@ -575,3 +593,451 @@ Todo cambio a un CI bajo control (§3) pasa por una Change Request (§5.2) que s
 - Conventional Commits. (s.f.). *Conventional Commits 1.0.0*. https://www.conventionalcommits.org
 - Preston-Werner, T. (2013). *Semantic Versioning 2.0.0*. https://semver.org
 - Rosero Castillo, R. A. (2026). *Mantenimiento y Evolución del Software: Análisis de Quimera*. Universidad de La Sabana, Maestría en Ingeniería de Software.
+
+---
+
+# Parte II — Calidad y sostenibilidad: estrategias de mantenimiento y evolución (Unidad 3)
+
+> Esta Parte II continúa el mismo repositorio y el mismo sistema (Quimera / `phx-prototype`) de la Parte I.
+> La Parte I definió el *mecanismo* de gestión de configuración.
+> La Parte II lo usa para responder una pregunta distinta: **¿cómo se mejora la calidad y la sostenibilidad del sistema mediante mantenimiento y evolución, y cómo se verifica que la mejora ocurrió?**
+> Las mejoras de código ya implementadas y verificadas están en §9 (CR-001, CR-002, CR-003); esta parte las reencuadra como estrategia, añade **CR-004** y evalúa el impacto contra atributos de calidad.
+
+---
+
+## 12. Alcance de la Parte II
+
+| Actividad de la guía | Sección |
+|---|---|
+| Analizar los resultados del diagnóstico inicial | §13.1 |
+| Identificar oportunidades de mejora | §13.2, §13.3 |
+| Proponer estrategia de refactorización | §14 |
+| Proponer estrategia de modernización | §15 |
+| Implementar mejoras en el sistema | §16 (CR-004) + §9 (CR-001–003 ya mergeados) |
+| Evaluar impacto de las mejoras | §17 |
+| Documentar resultados obtenidos | §18 + este documento completo |
+
+**Marcos de referencia usados en esta parte** (los de la Parte I siguen vigentes):
+
+| Marco | Uso en la Parte II |
+|---|---|
+| **ISO/IEC 14764:2006** (ya citado, §11) | Clasificación de cada CR por tipo de mantenimiento: correctivo, adaptativo, perfectivo, preventivo. |
+| **ISO/IEC 25010:2011** | Modelo de calidad de producto: los atributos contra los que se mide el impacto (§17.2). |
+| **Fowler, *Refactoring* (2ª ed., 2018)** | Catálogo de refactorizaciones con nombre propio aplicadas en CR-002, CR-003 y CR-004 (§14). |
+| **Leyes de Lehman de la evolución del software** | Marco para justificar por qué la modernización de proceso es *sostenibilidad*, no una mejora puntual (§15.3). |
+| **Beck, *TDD by Example* (2003)** | Prueba en rojo antes de la implementación; método de los tres correctivos de CR-002 (§14.4). |
+
+---
+
+## 13. Análisis del diagnóstico inicial y oportunidades de mejora
+
+### 13.1 Qué dijo el diagnóstico
+
+El diagnóstico previo (*Análisis de Quimera*, jul. 2026; CI-DOC-diagnostico) identificó cinco causas raíz de naturaleza organizacional:
+
+1. Ambigüedad de alcance: sin requerimientos claros, el avance no era medible.
+2. Rotación de equipo sin traspaso documentado: el conocimiento se perdía con cada salida.
+3. Cambios de stack sin gobierno: Ruby on Rails → Supabase y AngularJS → React, sin ninguna decisión registrada.
+4. Ausencia de documentación técnica que diera visión del proyecto.
+5. Ausencia de pruebas unitarias y de integración: mencionadas como intención, nunca alcanzadas.
+
+Y un estado técnico concreto, verificable en el commit `384d8dd` (baseline BL-1.0):
+solo frontend, sin backend ni persistencia, servicio `Login/Auth` no implementado, sin pruebas, sin pipeline de CI, datos "quemados" en `data/mockdata/*` sin contrato de tipos verificable.
+
+### 13.2 De hallazgo a oportunidad de mejora
+
+Cada causa raíz se traduce a una manifestación técnica puntual en el repositorio y a una oportunidad de mejora accionable.
+
+| Hallazgo del diagnóstico | Manifestación técnica concreta (BL-1.0) | Oportunidad de mejora | Atributo ISO 25010 afectado |
+|---|---|---|---|
+| Sin pruebas | 0 archivos de prueba, sin *test runner* en `package.json` | Introducir suite de pruebas + cobertura + *runner* | Mantenibilidad / Capacidad de prueba |
+| Sin gobierno de cambios / sin verificación previa a `main` | `main` recibe *push* directo, sin gate; deploy manual | Pipeline CI (lint + build) obligatorio antes de *merge*; deploy gateado | Fiabilidad / Madurez; Portabilidad / Instalabilidad |
+| Validación de formularios inexistente (ejemplo citado en el diagnóstico) | `@tanstack/react-form` y `zod` instalados pero sin conectar; 3 formularios sin `onChange`/`onSubmit` correctos | Conectar validación por *schema*; corregir el *wiring* roto | Adecuación funcional / Corrección; Fiabilidad / Madurez |
+| Servicio `Login/Auth` ausente | No existe `lib/auth/*`; rutas `/dashboard`, `/admin` sin protección | Implementar sesión + guardado de rutas | Adecuación funcional / Completitud; Seguridad (parcial) |
+| Sin documentación del "por qué" | Sin ADR; sin historial de decisiones | ADR obligatorio para cambios de arquitectura | Mantenibilidad / Capacidad de análisis |
+| Cambios de stack sin registro | Historial Git sin convención, sin trazas a requerimientos | Conventional Commits + `Refs: CR-<id>` + matriz de trazabilidad | Mantenibilidad / Capacidad de análisis |
+| Deriva entre datos mock y contrato de dominio | `constatns.ts` (typo), `npyType` vs `npiType`, `phone` vs `cellphone`; `mockUsers` sin tipo | Renombrar a nombres reveladores + tipar el mock contra `User` | Mantenibilidad / Modificabilidad |
+
+### 13.3 Priorización
+
+El orden de ejecución no es arbitrario: cada mejora habilita o protege a la siguiente.
+
+| # | Oportunidad | Impacto | Esfuerzo | Riesgo de no hacerla | CR |
+|---|---|---|---|---|---|
+| 1 | Pipeline CI/CD | Alto | Bajo | Cualquier otra mejora podría romper `main` sin que nadie lo note | CR-001 |
+| 2 | Validación + pruebas en formularios | Alto | Medio | Es donde el diagnóstico y el §6.1 marcan más defecto latente | CR-002 |
+| 3 | Servicio `Login/Auth` | Alto | Medio-alto | Mayor brecha funcional; bloquea BL-1.1 | CR-003 |
+| 4 | Higiene de nombres + tipado del mock | Medio | Bajo | Barato de arreglar ahora, caro cuando el mock se reemplace por backend (BL-1.2) | CR-004 |
+
+Justificación del orden:
+el pipeline (1) es el *gate* que protege todo lo demás, por eso va primero y con el menor esfuerzo.
+La validación (2) ataca el defecto latente de mayor densidad.
+La autenticación (3) es la mayor brecha funcional pero depende de que el *gate* ya exista para mergearse con seguridad.
+La higiene (4) es preventiva: su valor es evitar que la deriva contrato-datos se propague cuando `CI-DAT-*` migre a integraciones reales.
+
+---
+
+## 14. Propuesta de solución — Estrategia de refactorización
+
+### 14.1 Criterio: qué es refactorización aquí y qué no
+
+Se adopta la definición de Fowler: **refactorización es un cambio en la estructura interna del código que no altera su comportamiento observable**, hecho en pasos pequeños y respaldado por pruebas.
+
+Bajo ese criterio se separan dos cosas que la actividad podría mezclar:
+
+- **Refactorización** (invariancia de comportamiento): renombrados, extracción de funciones, eliminación de código muerto, introducción de aserciones de tipo. Se catalogan en §14.2.
+- **Mantenimiento correctivo** (cambia el comportamiento: de roto a correcto): los tres *bugs* silenciosos de CR-002. **No son refactorizaciones** y se documentan aparte en §14.4, con método TDD.
+
+Esta distinción es deliberada: llamar "refactor" a un *bugfix* debilitaría la trazabilidad (§6) porque oculta un cambio de comportamiento bajo una etiqueta que promete lo contrario.
+
+### 14.2 Catálogo de refactorizaciones aplicadas
+
+| Refactorización (Fowler, 2ª ed.) | Dónde | CR | Motivación | Cómo se verifica la invariancia |
+|---|---|---|---|---|
+| **Extract Function** | `getFieldError(field)` → `components/forms/utils/getFieldError.ts` | CR-002 | Centraliza el mapeo campo-de-TanStack → mensaje; la alternativa inline habría repetido la misma lógica en ~12 *render props* | Las pruebas de formulario siguen verdes con la misma aserción de mensaje visible |
+| **Remove Dead Code** | `useState<Date>` desconectado en `registerForm`; dependencia `@tanstack/zod-form-adapter` instalada y nunca importada | CR-002 | Código y dependencia sin ninguna arista entrante: ruido para análisis y para el árbol de dependencias | `pnpm build` y `pnpm test` verdes tras la eliminación; `rg` confirma cero referencias |
+| **Change Function Declaration** | Firma de `FileInput` y `SelectInput`: se añade `error` y (en `SelectInput`) `onValueChange` | CR-002 | La interfaz del componente no permitía reportar error ni propagar el cambio de valor; acompaña al correctivo de §14.4 | Componentes consumidos por las mismas pruebas de render; sin cambio en el árbol renderizado salvo el nodo de error |
+| **Rename Field** | `npyType` → `npiType` en `lib/types.ts`, `lib/schemas/user.schema.ts`, `user.schema.test.ts`, `registerForm.tsx` | CR-004 | `npiType` describe "tipo del `npi`"; `npyType` era un typo que el *type* propagó a 3 artefactos | El valor es siempre el literal `"C.C"`; `pnpm test` 48/48 sin cambios |
+| **Rename** (módulo) | `lib/constatns.ts` → `lib/constants.ts` (+ import en `app/page.tsx`) | CR-004 | El nombre del archivo tenía un error tipográfico evidente; una sola arista de código lo referenciaba | `git mv` conserva historial; `pnpm build` resuelve el import |
+| **Rename Field** | `phone` → `cellphone` en `data/mockdata/users.ts` (×9) | CR-004 | Alinea el dato mock con la llave que declara el contrato `User` | Ningún consumidor lee `.phone` (`rg` lo confirma); `authContext` solo usa `.id` |
+| **Introduce Assertion** (a nivel de tipo) | Anotación `MockUser = Pick<User, ...>` sobre `mockUsers.result` | CR-004 | Hace explícita y verificable por el compilador la suposición implícita "el mock cumple `User`" | `next build` ejecuta `tsc`: si el mock se desvía de `User`, el *build* ahora falla |
+
+CR-003 no aparece en este catálogo: es código nuevo para una capacidad ausente, no una reestructuración de código existente.
+Sus decisiones de estructura (`RouteGuard` como hoja cliente, `roleToRouteSegment.ts` como único punto de mapeo) se tratan como modernización en §15.1 y en ADR-0001.
+
+### 14.3 Evidencia antes / después — CR-004
+
+**Rename Field (`npyType` → `npiType`).**
+El *contrato* de dominio tenía el typo; el dato mock ya estaba correcto. La refactorización alinea a favor del dato.
+
+```ts
+// ANTES — lib/types.ts
+export type User = {
+  npi: string;
+  npyType: "C.C";   // typo: 'y' por 'i'; se propagó a schema, test y form
+  // ...
+};
+
+// DESPUÉS — lib/types.ts
+export type User = {
+  npi: string;
+  npiType: "C.C";   // "tipo del npi"; coincide con data/mockdata/users.ts
+  // ...
+};
+```
+
+**Introduce Assertion (tipado del mock).**
+El literal no tenía contrato; cualquier desajuste con `User` era invisible hasta runtime (o nunca).
+
+```ts
+// ANTES — data/mockdata/users.ts
+export const mockUsers = {
+  result: [
+    { id: "1b84...", name: "Lambert", /* ... */ phone: "+57 381 116 10 94", userType: "creditor" },
+    // ...
+  ],
+};
+
+// DESPUÉS — data/mockdata/users.ts
+import type { User } from "@/lib/types";
+
+type MockUser = Pick<
+  User,
+  | "id" | "name" | "lastName" | "npi" | "npiType"
+  | "email" | "cellphone" | "address" | "city" | "dateOfBirth" | "userType"
+>;
+
+export const mockUsers: { result: MockUser[] } = {
+  result: [
+    { id: "1b84...", name: "Lambert", /* ... */ cellphone: "+57 381 116 10 94", userType: "creditor" },
+    // ...
+  ],
+};
+```
+
+Efecto medible: la deriva contrato-datos descrita en §6.3 deja de ser un hallazgo de revisión manual y pasa a ser un error de compilación.
+
+### 14.4 Evidencia antes / después — mantenimiento correctivo (CR-002, método TDD)
+
+Conectar la validación por *schema* expuso tres *bugs* silenciosos, ninguno documentado antes de CR-002.
+Cada uno se corrigió con **prueba en rojo primero** (Beck, 2003).
+
+| # | Archivo | Síntoma | Causa | Prueba de regresión |
+|---|---|---|---|---|
+| 1 | `registerForm.tsx` | El archivo seleccionado nunca llegaba al estado del formulario | El *render prop* del campo `file` era `{() => ...}` (sin `field`) y `onChange` solo hacía `console.log` | `registerForm.test.tsx` |
+| 2 | `registerForm.tsx` | `dateOfBirth` no se enviaba | Vivía en un `useState` local, desconectado del `field` de TanStack Form | `registerForm.test.tsx` |
+| 3 | `createProyectForm.tsx` | El estado del proyecto nunca se asignaba; el formulario no enviaba | El `Select` de `status` no tenía `onValueChange`; el `<form>` no tenía `onSubmit` | `createProyectForm.test.tsx` |
+
+```tsx
+// ANTES — registerForm.tsx (bug 1: el campo file no se conecta)
+<form.Field name="file">
+  {() => (
+    <FileInput
+      label={""} name={""}
+      onChange={(file: File | null): void => {
+        if (file) { console.log("File selected: ", file); }
+        else { console.log("No file selected."); }
+      }}
+    />
+  )}
+</form.Field>
+
+// DESPUÉS — registerForm.tsx
+<form.Field name="file" validators={{ onChange: userSchema.shape.file }}>
+  {(field) => (
+    <FileInput
+      label="Archivo" name={field.name}
+      onChange={(file: File | null): void => { field.handleChange(file); }}
+      error={getFieldError(field)}
+    />
+  )}
+</form.Field>
+```
+
+```tsx
+// ANTES — createProyectForm.tsx (bug 3: sin onSubmit y sin onValueChange)
+<form className="flex flex-col items-center justify-between gap-2 w-full">
+  {/* ... */}
+  <form.Field name="status">
+    {(field) => (
+      <SelectInput label="Status" placeholder="Status" value={field.state.value}
+        options={[{ label: "Abierto", value: "open" }, { label: "Cerrado", value: "closed" }]} />
+    )}
+  </form.Field>
+
+// DESPUÉS — createProyectForm.tsx
+<form
+  className="flex flex-col items-center justify-between gap-2 w-full"
+  onSubmit={(event) => { event.preventDefault(); event.stopPropagation(); form.handleSubmit(); }}
+>
+  {/* ... */}
+  <form.Field name="status" validators={{ onChange: proyectSchema.shape.status }}>
+    {(field) => (
+      <SelectInput label="Status" placeholder="Status" value={field.state.value}
+        onValueChange={(value) => field.handleChange(value)}
+        options={[{ label: "Abierto", value: "open" }, { label: "Cerrado", value: "closed" }]}
+        error={getFieldError(field)} />
+    )}
+  </form.Field>
+```
+
+---
+
+## 15. Propuesta de solución — Estrategia de modernización
+
+### 15.1 Qué se moderniza y por qué
+
+Modernización aquí es llevar el sistema a prácticas y capacidades actuales de las que carecía, sin reescribir el producto. Tres ejes:
+
+| Eje | De | A | CR | Tipo de mantenimiento |
+|---|---|---|---|---|
+| Proceso de entrega | *push* directo a `main`, deploy manual, sin verificación | Gate `lint + build` obligatorio en cada PR; deploy a GitHub Pages gateado por `needs: ci` | CR-001 | Perfectivo + preventivo |
+| Capacidad funcional | Servicio `Login/Auth` ausente | Sesión en Context + `RouteGuard` de rutas, compatible con `output: "export"` | CR-003 | Adaptativo + perfectivo |
+| Contrato de datos | `mockUsers` como literal sin tipo | Contrato `MockUser` verificado por el compilador | CR-004 | Preventivo |
+
+### 15.2 Decisiones técnicas y su justificación
+
+| Decisión | Alternativas consideradas | Por qué esta | Registrada en |
+|---|---|---|---|
+| Deploy en **GitHub Pages** | Vercel, Netlify | El prototipo es 100% cliente con datos mock: admite `output: "export"` sin pérdida de función; Pages se autentica con el `GITHUB_TOKEN` de Actions, sin *secrets* ni cuentas externas | §9.3 |
+| **Auth del lado del cliente** | Next.js Middleware; backend real con sesión de servidor | Middleware **no se ejecuta** bajo `output: "export"` (imposibilidad técnica, no *trade-off*); el backend real es alcance de BL-1.2, no de este CR | ADR-0001 |
+| **No unificar** `USER_TYPES` (`client`/`investor`) y `UserType` (`creditor`/`debtor`) | Unificar en un vocabulario único | Un *rename* de mayor alcance que toca rutas (`/dashboard/[userType]`) y datos ya poblados; se mapea en un único punto (`roleToRouteSegment.ts`) | ADR-0001 |
+| **Vitest** como *runner* | Jest + React Testing Library (la "intención nunca alcanzada" del diagnóstico) | Integración directa con el *toolchain* Vite/Next del proyecto y arranque más rápido; es un *runner*, no arquitectura de aplicación, por lo que no exige ADR (criterio §5.3) | §9.5 |
+
+### 15.3 Por qué esto es sostenibilidad y no una mejora puntual
+
+Quimera es un sistema **tipo E** en la clasificación de Lehman: existe en un contexto real y debe cambiar para seguir siendo útil.
+Dos leyes de Lehman aplican de forma directa:
+
+- **Complejidad creciente**: sin trabajo dedicado a contenerla, cada cambio deja el sistema más difícil de cambiar.
+- **Calidad declinante**: la calidad de un sistema E percibida por sus usuarios disminuye con el tiempo salvo que se mantenga y adapte de forma rigurosa.
+
+El pipeline de CI, la suite de pruebas, los ADR y la trazabilidad no son mejoras aisladas: son el **trabajo sistematizado** que esas leyes exigen para que el costo del próximo cambio no crezca sin control.
+Esa es la definición operativa de sostenibilidad técnica que usa este documento (§17.3).
+
+---
+
+## 16. Implementación
+
+### 16.1 Estado por Change Request
+
+| CR | Tipo (ISO 14764) | Estrategia | Estado | Evidencia | PR |
+|---|---|---|---|---|---|
+| CR-001 | Perfectivo + preventivo | Modernización de proceso | Mergeado | §9.4; deploy en vivo | #1 |
+| CR-002 | Correctivo + perfectivo + preventivo | Refactorización + pruebas (TDD) | Mergeado | §9.7 | #3 |
+| CR-003 | Adaptativo + perfectivo | Modernización (capacidad) | Mergeado | §9.7; ADR-0001 | #4 |
+| CR-004 | Preventivo + perfectivo | Refactorización (higiene + tipado) | Esta iteración | §16.2–§16.3 | rama `feat/CR-004-refactor-hygiene` |
+
+### 16.2 CR-004 — ficha de Change Request
+
+```
+CR-ID:             CR-004
+Título:            Higiene de nombres del contrato de dominio + tipado del mock de usuarios
+Solicitante:       Rigo Rosero
+CI afectados:      CI-SRC-lib-01 (lib/types.ts), CI-SRC-lib-02 (lib/constants.ts),
+                   CI-SRC-lib-03 (lib/schemas/user.schema.ts), CI-DAT-users,
+                   CI-SRC-cmp-01 (registerForm), CI-DOC-adr
+Tipo de cambio:    [x] Preventivo  [x] Perfectivo
+¿Cambia arquitectura o stack?  [ ] Sí   [x] No — solo renombrados y una anotación
+                   de tipo; sin cambio de comportamiento observable
+Justificación:     Cierra los hallazgos de higiene diferidos explícitamente en §6.3
+                   (constatns.ts, npyType/npiType, phone/cellphone), ejecutándolos
+                   bajo el procedimiento de la §5 en lugar de dejarlos como deuda.
+Impacto / riesgo:  Bajo. Renombrados con valor constante y una anotación de tipo
+                   que el build (tsc) verifica. Sin cambio funcional.
+Baseline de origen: BL-1.0 (sobre CR-003 ya mergeado)
+Baseline destino:   BL-1.0 (incremento interno; contenido de BL-1.3, ver §4.1)
+```
+
+Como no afecta arquitectura ni stack, el flujo de §5.1 no exige ADR; pasa directo a rama de feature.
+
+### 16.3 CR-004 — cambios y verificación
+
+Archivos tocados (fuera de `README.md` y `pnpm-lock.yaml`):
+
+```
+ app/page.tsx                                    |  2 +-   (import de @/lib/constants)
+ components/forms/registerForm/registerForm.tsx  |  2 +-   (npyType -> npiType)
+ data/mockdata/users.ts                          | 37 ++-  (phone -> cellphone x9; tipo MockUser)
+ docs/adr/0001-client-side-auth-under-static-export.md | 2 +-  (ruta actualizada + nota CR-004)
+ lib/{constatns.ts => constants.ts}              |  0      (git mv, 100% rename)
+ lib/schemas/user.schema.ts                      |  2 +-   (npyType -> npiType)
+ lib/schemas/user.schema.test.ts                 |  2 +-   (npyType -> npiType)
+ lib/types.ts                                    |  2 +-   (npyType -> npiType)
+```
+
+Verificación local (rama `feat/CR-004-refactor-hygiene`):
+
+```
+$ pnpm test
+ Test Files  9 passed (9)
+      Tests  48 passed (48)
+
+$ pnpm test:coverage
+Statements   : 87.37% ( 180/206 )
+Branches     : 64.7%  ( 44/68 )
+Functions    : 92.47% ( 86/93 )
+Lines        : 87.56% ( 176/201 )
+
+$ pnpm lint
+✔ No ESLint warnings or errors
+
+$ GITHUB_PAGES=true pnpm build
+✓ Generating static pages (11/11)
+✓ Exporting (3/3)
+```
+
+**Sin regresión**: exactamente las mismas 48 pruebas y la misma cobertura que dejó CR-003 (§9.7).
+CR-004 no añade comportamiento; alinea nombres y añade una verificación de tipo.
+El *diff* de cobertura nulo es el resultado esperado de una refactorización pura.
+
+### 16.4 Oportunidades identificadas y no ejecutadas en esta iteración
+
+Se listan explícitamente para que no se lean como omisiones (status accounting, §7.4).
+
+| Oportunidad | Por qué se difiere | Destino |
+|---|---|---|
+| Alinear nombres de campo de `createProyectForm` (`transactionId`, ...) con el tipo `Proyect` (§6.3) | *Rename* de mayor alcance: toca el *schema*, sus pruebas y el flujo de creación; merece su propio CR con su propia evidencia antes/después | CR futuro, BL-1.3 |
+| Unificar `USER_TYPES` y `UserType` | Decisión de ADR-0001: mantener separados mientras el mapeo de un punto sea suficiente | Revisar en BL-1.2 |
+| Subir cobertura de ramas (64.7%) | Requiere pruebas nuevas de caminos de error, no refactorización; fuera del alcance de CR-004 | BL-1.3 |
+| Reemplazar `CI-DAT-*` por backend real | Alcance de BL-1.2 completo | BL-1.2 |
+
+---
+
+## 17. Evaluación de impacto
+
+### 17.1 Métricas antes / después (consolidado)
+
+Estado en `BL-1.0` (`384d8dd`) contra `main` tras CR-004.
+
+| Métrica | Antes (BL-1.0) | Después (post CR-004) |
+|---|---|---|
+| Pruebas automatizadas | 0 | 48 (9 archivos) |
+| Cobertura de sentencias | 0% | 87.37% (180/206) |
+| Cobertura de funciones | 0% | 92.47% (86/93) |
+| Cobertura de ramas | 0% | 64.7% (44/68) |
+| Formularios con validación por *schema* | 0/2 | 3/3 |
+| *Bugs* silenciosos en formularios | 3 (sin documentar, sin prueba) | 0 (cada uno con prueba de regresión) |
+| Servicio `Login/Auth` | No implementado | Implementado (login, registro, logout, guard) |
+| Rutas protegidas | 0 | 2 (`/dashboard/[userType]`, `/admin`) |
+| Pipeline de CI | No existe | `lint + build` en cada PR; deploy gateado |
+| ADR registrados | 0 | 1 (`docs/adr/0001`) |
+| Módulos mock que sustituyen un servicio y carecen de contrato de tipos | 1 (`users`) | 0 |
+| Desajustes de nombres contrato ↔ dato | 3 documentados, 0 resueltos | 1 (diferido, con CR asignado) |
+
+### 17.2 Impacto por atributo de calidad (ISO/IEC 25010)
+
+| Atributo | Subcaracterística | Antes | Después | Evidencia |
+|---|---|---|---|---|
+| Mantenibilidad | Capacidad de prueba | Sin pruebas ni *runner* | 48 pruebas, 87% sentencias, `pnpm test` en el gate | §9.7, §16.3 |
+| Mantenibilidad | Modificabilidad | Validación ad-hoc dispersa; mock sin contrato | *Schemas* centralizados (`lib/schemas/*`); mock tipado que rompe el *build* ante deriva | CR-002, CR-004 |
+| Mantenibilidad | Capacidad de análisis | Historial sin convención; sin ADR | Conventional Commits + `Refs: CR-<id>` + matriz §6 + ADR-0001 | §9.2, §6 |
+| Mantenibilidad | Modularidad | Lógica de guardado acoplada al *layout* | `RouteGuard` como hoja cliente aislada; `getFieldError` extraído | CR-002, CR-003 |
+| Fiabilidad | Madurez | 3 *bugs* silenciosos activos | 0; cada uno con prueba de regresión | §9.7 |
+| Fiabilidad | Recuperabilidad (proceso) | `main` sin gate; deploy manual | `deploy` depende de `needs: ci`; nunca publica un build que no pasó | §9.3 |
+| Adecuación funcional | Completitud | `Login/Auth` ausente | Implementado | §9.6 |
+| Adecuación funcional | Corrección | Formularios no enviaban datos correctos | Envían datos validados por *schema* | §9.5, §14.4 |
+| Seguridad | Control de acceso | Rutas sin protección | Guard de rutas del lado del cliente | CR-003 (con salvedad §17.4) |
+| Portabilidad | Instalabilidad | Sin build reproducible verificado | `pnpm install --frozen-lockfile` + build export en CI; deploy verificable | §9.3 |
+
+### 17.3 Sostenibilidad
+
+Sostenibilidad técnica = capacidad de seguir evolucionando el sistema sin que el costo y el riesgo del próximo cambio crezcan sin control.
+Cada mecanismo introducido neutraliza una causa raíz del diagnóstico:
+
+| Causa raíz (diagnóstico) | Mecanismo introducido | Cómo sostiene la evolución |
+|---|---|---|
+| La rotación de equipo destruía el conocimiento | ADR + Conventional Commits + matriz de trazabilidad (§6) | Un desarrollador nuevo reconstruye el "por qué" de cada decisión sin memoria institucional |
+| Cambios de stack sin gobierno | CCB + ADR obligatorio para CR de arquitectura (CR-003 lo estrenó) | Ninguna decisión estructural vuelve a quedar sin registro |
+| Ausencia de pruebas | Suite + cobertura + gate de CI | Las regresiones se detectan antes de llegar a `main` |
+| Ausencia de documentación | Este README vivo, versionado junto al código | La documentación no puede quedar desactualizada sin que se vea en el *diff* |
+| Deriva contrato ↔ datos | Tipado del mock (CR-004) | El compilador es ahora el guardián del contrato; la deriva es un error de *build* |
+
+### 17.4 Amenazas a la validez de esta evaluación
+
+- La cobertura de líneas no implica ausencia de defectos; la cobertura de ramas (64.7%) es la brecha real y honesta.
+- Sin backend, varias verificaciones de la matriz §6.1 siguen siendo manuales.
+- El guardado de rutas es del lado del cliente: es demostrativo, **no** un control de seguridad real (ADR-0001, Consecuencias).
+- El equipo es unipersonal: el valor de CCB y ADR es proyectivo (para cuando el equipo crezca), no probado aún bajo rotación real.
+- Las métricas "antes" de BL-1.0 son ceros estructurales (no existía la práctica), no medidas degradadas; la comparación muestra introducción de capacidad, no optimización.
+
+---
+
+## 18. Documentación y soporte
+
+### 18.1 Qué constituye la documentación entregable y dónde vive
+
+| Artefacto | Ubicación | CI | Naturaleza |
+|---|---|---|---|
+| Este documento (Parte I + Parte II) | `README.md` | CI-DOC-readme | Editable; versionado junto al código |
+| Decisión de arquitectura de CR-003 | `docs/adr/0001-client-side-auth-under-static-export.md` | CI-DOC-adr | Inmutable salvo actualización de referencias |
+| Evidencia de despliegue de CR-001 | `docs/evidence/cr-001-*.png` | CI-DOC-readme (adjunto) | Captura, no editable |
+| Narrativa de cambios | Historial Git en Conventional Commits | CI-INF-repo | Autogenerable a `CHANGELOG.md` (§7.2, pendiente) |
+| Trazabilidad requerimiento ↔ CI ↔ baseline ↔ verificación | §6 | CI-DOC-readme | Se actualiza en cada CR |
+
+### 18.2 Cómo se mantiene
+
+Cada CR actualiza la sección correspondiente de este README y la matriz de trazabilidad §6 (contabilización de estado, §7.4).
+La Parte II añadió la regla: un hallazgo diferido (§6.3) se cierra creando un CR con su ficha y su evidencia, no editándolo en silencio; CR-004 es el primer ejemplo.
+
+### 18.3 Soporte: checks locales equivalentes al gate de CI
+
+```bash
+pnpm install --frozen-lockfile
+pnpm test           # 48 pruebas
+pnpm test:coverage  # reporte v8
+pnpm lint           # ESLint (config CI-CFG-lint)
+GITHUB_PAGES=true pnpm build   # export estático, igual que el job `ci`
+```
+
+Puesta en marcha del prototipo: §8.
+
+---
+
+## 19. Referencias adicionales (Parte II)
+
+- Fowler, M. (2018). *Refactoring: Improving the Design of Existing Code* (2nd ed.). Addison-Wesley.
+- ISO/IEC. (2011). *ISO/IEC 25010:2011 — Systems and software engineering — Systems and software Quality Requirements and Evaluation (SQuaRE) — System and software quality models*. ISO.
+- Lehman, M. M., & Belady, L. A. (1985). *Program Evolution: Processes of Software Change*. Academic Press.
+- Lehman, M. M., Ramil, J. F., Wernick, P. D., Perry, D. E., & Turski, W. M. (1997). Metrics and laws of software evolution — the nineties view. *Proceedings IEEE International Software Metrics Symposium*.
+- Beck, K. (2003). *Test-Driven Development: By Example*. Addison-Wesley.
