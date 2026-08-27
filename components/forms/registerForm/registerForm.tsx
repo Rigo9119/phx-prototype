@@ -21,7 +21,7 @@ export function RegisterForm({ userType }: RegisterFormProps) {
       name: "",
       lastName: "",
       npi: "",
-      npyType: "C.C",
+      npiType: "C.C",
       email: "",
       cellphone: "",
       address: "",

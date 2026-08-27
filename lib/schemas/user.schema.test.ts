@@ -5,7 +5,7 @@ const validUser = {
   name: "Juan",
   lastName: "Perez",
   npi: "1234567890",
-  npyType: "C.C",
+  npiType: "C.C",
   email: "juan.perez@example.com",
   cellphone: "3001234567",
   address: "Calle 123",
