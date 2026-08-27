@@ -1,4 +1,4 @@
-import { USER_TYPES } from "@/lib/constatns";
+import { USER_TYPES } from "@/lib/constants";
 import Link from "next/link";
 
 export default function Home() {

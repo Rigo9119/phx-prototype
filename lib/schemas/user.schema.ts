@@ -7,7 +7,7 @@ export const userSchema = z.object({
     .string()
     .min(1, "La cedula es requerida")
     .regex(/^\d+$/, "La cedula debe contener solo numeros"),
-  npyType: z.string().min(1, "El tipo de documento es requerido"),
+  npiType: z.string().min(1, "El tipo de documento es requerido"),
   email: z.string().email("Correo electronico invalido"),
   cellphone: z
     .string()

@@ -28,7 +28,7 @@ export type User = {
   name: string;
   lastName: string;
   npi: string;
-  npyType: "C.C";
+  npiType: "C.C";
   email: string;
   cellphone: string;
   address: string;

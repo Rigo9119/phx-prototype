@@ -1,4 +1,21 @@
-export const mockUsers = {
+import type { User } from "@/lib/types";
+
+type MockUser = Pick<
+  User,
+  | "id"
+  | "name"
+  | "lastName"
+  | "npi"
+  | "npiType"
+  | "email"
+  | "cellphone"
+  | "address"
+  | "city"
+  | "dateOfBirth"
+  | "userType"
+>;
+
+export const mockUsers: { result: MockUser[] } = {
   result: [
     {
       id: "1b849392-bfa7-4c3b-bd41-ccbe540be034",
@@ -7,7 +24,7 @@ export const mockUsers = {
       npi: "247631335",
       npiType: "C.C",
       email: "Katelin78@example.com",
-      phone: "+57 381 116 10 94",
+      cellphone: "+57 381 116 10 94",
       address: "7680 Quarry Lane",
       city: "Schroederhaven",
       dateOfBirth: "Thu Jan 24 1985 10:37:23 GMT-0500 (Colombia Standard Time)",
@@ -20,7 +37,7 @@ export const mockUsers = {
       npi: "395498692",
       npiType: "C.C",
       email: "Merritt_Huel45@example.com",
-      phone: "+57 337 761 10 51",
+      cellphone: "+57 337 761 10 51",
       address: "229 Harris Ford",
       city: "Downey",
       dateOfBirth: "Mon Oct 09 2000 21:24:06 GMT-0500 (Colombia Standard Time)",
@@ -33,7 +50,7 @@ export const mockUsers = {
       npi: "691363896",
       npiType: "C.C",
       email: "Hilda.Feest2@example.com",
-      phone: "+57 326 144 10 17",
+      cellphone: "+57 326 144 10 17",
       address: "6257 Streich Path",
       city: "West Irwintown",
       dateOfBirth: "Sat May 15 1971 19:43:02 GMT-0500 (Colombia Standard Time)",
@@ -46,7 +63,7 @@ export const mockUsers = {
       npi: "993877431",
       npiType: "C.C",
       email: "Wilbert.Muller@example.com",
-      phone: "+57 383 282 10 48",
+      cellphone: "+57 383 282 10 48",
       address: "234 Emmanuelle Lakes",
       city: "Fort Candido",
       dateOfBirth: "Tue Apr 05 1994 20:09:13 GMT-0500 (Colombia Standard Time)",
@@ -59,7 +76,7 @@ export const mockUsers = {
       npi: "638920721",
       npiType: "C.C",
       email: "Arlo5@example.com",
-      phone: "+57 387 475 10 50",
+      cellphone: "+57 387 475 10 50",
       address: "78811 S West Street",
       city: "Celiachester",
       dateOfBirth: "Sat Jun 13 1987 16:41:10 GMT-0500 (Colombia Standard Time)",
@@ -72,7 +89,7 @@ export const mockUsers = {
       npi: "371651020",
       npiType: "C.C",
       email: "Boris7@gmail.com",
-      phone: "+57 380 468 10 59",
+      cellphone: "+57 380 468 10 59",
       address: "99488 Kendall Court",
       city: "West Jadenworth",
       dateOfBirth: "Thu Mar 10 1994 17:54:11 GMT-0500 (Colombia Standard Time)",
@@ -85,7 +102,7 @@ export const mockUsers = {
       npi: "321756679",
       npiType: "C.C",
       email: "Gillian.Goldner@example.com",
-      phone: "+57 340 451 10 63",
+      cellphone: "+57 340 451 10 63",
       address: "5422 Abshire Plaza",
       city: "Ralphland",
       dateOfBirth: "Mon Mar 23 2009 09:49:36 GMT-0500 (Colombia Standard Time)",
@@ -98,7 +115,7 @@ export const mockUsers = {
       npi: "393945749",
       npiType: "C.C",
       email: "Maybelle.Pacocha@gmail.com",
-      phone: "+57 346 212 10 55",
+      cellphone: "+57 346 212 10 55",
       address: "7442 Corwin Radial",
       city: "West Freeda",
       dateOfBirth: "Mon Jan 05 2004 11:22:16 GMT-0500 (Colombia Standard Time)",
@@ -111,7 +128,7 @@ export const mockUsers = {
       npi: "638690335",
       npiType: "C.C",
       email: "Toby80@example.com",
-      phone: "+57 356 552 10 31",
+      cellphone: "+57 356 552 10 31",
       address: "928 Dorcas Fort",
       city: "Fort Lucianoberg",
       dateOfBirth: "Sat Dec 25 1976 14:08:51 GMT-0500 (Colombia Standard Time)",
